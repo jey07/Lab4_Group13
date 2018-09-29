@@ -11,7 +11,7 @@ plot_ly( height=1000,
     z = scale(pricesnearn[, c(-1)]),
     type = "heatmap",
     colors = colorRamp(c("yellow", "red")),
-    colorbar = list(title = "Edhec Covariance")
-)
+    colorbar = list(title = "Color-Scale")
+) %>% layout(title="Heatmap of Countries")
 
 
