@@ -22,7 +22,7 @@ fontsize: 12pt
 read.delim() is used to read tab seperated data. Therafter, the required columns are filtered and first column is used as a rownames. The dataset is scaled to make it ready for plotting heatmap.   
 ```{r read, message=FALSE, warning=FALSE}
 library(plotly)
-
+library(seriation)
 pricesnearn <-read.delim("prices-and-earnings.txt",stringsAsFactors = FALSE)
 pricesnearn <- pricesnearn[,c(1,2,5,6,7,9,10,16,17,18,19)]
 
@@ -51,6 +51,10 @@ plot_ly( height=800, width=900,
 
 ```{r}
 dist_cols<-dist(t(scaledprices))
+dist_rows<-dist(scaledprices)
+
+order1<-seriate(dist_rows,"TSP")
+order2<-seriate(dist_cols,"TSP")
 ```
 
 
