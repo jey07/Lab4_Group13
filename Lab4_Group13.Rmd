@@ -23,6 +23,9 @@ read.delim() is used to read tab seperated data. Therafter, the required columns
 ```{r read, message=FALSE, warning=FALSE}
 library(plotly)
 library(seriation)
+library(GGally)
+
+
 pricesnearn <-read.delim("prices-and-earnings.txt",stringsAsFactors = FALSE)
 pricesnearn <- pricesnearn[,c(1,2,5,6,7,9,10,16,17,18,19)]
 
@@ -49,12 +52,120 @@ plot_ly( height=800, width=900,
 
 ###3. HeatMaps and Analysis
 
-```{r}
-dist_cols<-dist(t(scaledprices))
-dist_rows<-dist(scaledprices)
 
+
+```{r}
+dist_cols<-dist(t(scaledprices),method="euclidean",diag=FALSE)
+dist_rows<-dist(scaledprices,method="euclidean",diag=FALSE)
+
+order1<-seriate(dist_rows,"OLO")
+order2<-seriate(dist_cols,"OLO")
+
+ord1<-get_order(order1)
+ord2<-get_order(order2)
+
+scaledprices_euc <- scaledprices[rev(ord1),ord2]
+
+
+
+plot_ly( height=800, width=900,
+    x = colnames(scaledprices_euc),
+    y = rownames(scaledprices_euc),
+    z = scaledprices_euc,
+    type = "heatmap",
+    colors = colorRamp(c("yellow", "red")),
+    colorbar = list(title = "Color-Scale")
+) %>% layout(title="Heatmap using Euclidean Distances")
+```
+
+```{r message=FALSE, warning=FALSE}
+corr_rows<-1-cor(t(scaledprices))
+corr_cols<-1-cor(scaledprices)
+
+
+order1<-seriate(as.dist(corr_rows),"OLO")
+order2<-seriate(as.dist(corr_cols),"OLO")
+ord1<-get_order(order1)
+ord2<-get_order(order2)
+
+scaledprices_corr <- scaledprices[ord1,ord2]
+
+plot_ly( height=800, width=900,
+    x = colnames(scaledprices_corr),
+    y = rownames(scaledprices_corr),
+    z = scaledprices_euc,
+    type = "heatmap",
+    colors = colorRamp(c("yellow", "red")),
+    colorbar = list(title = "Color-Scale")
+) %>% layout(title="Heatmap using 1-Correlation as Distances")
+
+
+```
+
+<br>
+
+###4. TSP using Hamiltonian Path Length
+```{r}
 order1<-seriate(dist_rows,"TSP")
 order2<-seriate(dist_cols,"TSP")
+ord1<-get_order(order1)
+ord2<-get_order(order2)
+
+scaledprices_euc <- scaledprices[rev(ord1),ord2]
+
+plot_ly( height=800, width=900,
+    x = colnames(scaledprices_euc),
+    y = rownames(scaledprices_euc),
+    z = scaledprices_euc,
+    type = "heatmap",
+    colors = colorRamp(c("yellow", "red")),
+    colorbar = list(title = "Color-Scale")
+) %>% layout(title="Heatmap-TSP using Hamiltonian Path Length")
+
+
+
+```
+
+```{r}
+criterion(order1)
+```
+
+
+###5. Parallel Coordinate
+
+```{r}
+p <- pricesnearn %>% plot_ly(type = "parcoords", dimensions = list(
+  list(label = "Food Cost", values =  ~ Food.Costs...),
+  list(label = "Iphone4S", values =  ~ iPhone.4S.hr.),
+  list(label = "Clothing Index", values =  ~ Clothing.Index),
+  list(label="Hours Worked", values=~Hours.Worked),
+  list(label="Wage Net", values=~Wage.Net),
+  list(label="Vacation Days", values=~Vacation.Days),
+  list(label="Big Mac", values=~Big.Mac.min.),
+  list(label="Bread(in kg)", values=~Bread.kg.in.min.),
+  list(label="Rice(in kg)", values=~Rice.kg.in.min.),
+  list(label="Goods and Services", values=~Goods.and.Services...)
+  ))
+
+p
+
+pricesnearn$PhoneColor<-ifelse(pricesnearn$iPhone.4S.hr. > 56 , 1 ,0)
+ppcoord<-ggparcoord(pricesnearn,scale="uniminmax",groupColumn="PhoneColor")
+
+ggplotly(ppcoord)
+```
+
+
+###6. Radar chart Diagram
+
+```{r}
+scaledprices<-as.data.frame(scaledprices)
+scaledprices$City<-pricesnearn$City
+reordscaledprices <- scaledprices%>%tidyr::gather(variable, value, -City, factor_key=T)%>%arrange(City)
+
+radar_plot <- reordscaledprices %>% ggplot(aes(x=variable, y=value, group=City)) + geom_polygon(fill="blue") +coord_polar() + theme_bw() + facet_wrap(~City) +theme(axis.text.x = element_text(size = 5))
+
+radar_plot
 ```
 
 
